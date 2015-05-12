@@ -1,0 +1,8 @@
+[package]
+name = "git_ignore"
+version = "0.1.0"
+authors = ["Nathan Kleyn <nathan@nathankleyn.com>"]
+
+[dependencies]
+glob = "0.2.10"
+tempdir = "0.3.0"
