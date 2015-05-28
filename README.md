@@ -1,4 +1,4 @@
-# git_ignore.rs [![Build Status](https://travis-ci.org/nathankleyn/git_ignore.rs.svg)](https://travis-ci.org/nathankleyn/git_ignore.rs)
+# git_ignore.rs [![Build Status](https://travis-ci.org/nathankleyn/git_ignore.rs.svg)](https://travis-ci.org/nathankleyn/git_ignore.rs) [![Crates.io Version Of git_ignore](https://img.shields.io/crates/v/git_ignore.svg)](https://crates.io/crates/git_ignore)
 
 This is an implementation of `.gitignore` parsing and matching in Rust. Use this library if you want to check whether a given path would be excluded by a `.gitignore` file.
 
