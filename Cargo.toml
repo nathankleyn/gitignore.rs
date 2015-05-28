@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Nathan Kleyn <nathan@nathankleyn.com>"]
 description = "Implementation of .gitignore file parsing and glob testing in Rust."
 license = "MIT"
-respository = "https://github.com/nathankleyn/git_ignore.rs"
+repository = "https://github.com/nathankleyn/git_ignore.rs"
 
 [dependencies]
 glob = "0.2.10"
