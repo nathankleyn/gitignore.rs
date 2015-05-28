@@ -76,6 +76,16 @@ mod test {
     }
 
     #[test]
+    fn test_new_file_with_empty() {
+        with_fake_repo("", vec!["bar.foo"], |test_env| {
+            let file = File::new(test_env.gitignore, None).unwrap();
+            for path in test_env.paths.iter() {
+                assert!(!file.matches(path.as_path()).unwrap());
+            }
+        })
+    }
+
+    #[test]
     fn test_new_file_with_unanchored_wildcard() {
         with_fake_repo("*.foo", vec!["bar.foo"], |test_env| {
             let file = File::new(test_env.gitignore, None).unwrap();
