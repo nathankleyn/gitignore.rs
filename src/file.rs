@@ -3,11 +3,12 @@ use pattern;
 
 use std::fs;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct File<'a> {
-    patterns: Vec<pattern::Pattern<'a>>
+    patterns: Vec<pattern::Pattern<'a>>,
+    root: &'a Path
 }
 
 impl<'b> File<'b> {
@@ -16,7 +17,8 @@ impl<'b> File<'b> {
         let patterns = try!(File::patterns(path, root));
 
         Ok(File {
-            patterns: patterns
+            patterns: patterns,
+            root: root
         })
     }
 
@@ -35,6 +37,9 @@ impl<'b> File<'b> {
     }
 
     pub fn matches(&self, path: &'b Path) -> Result<bool, error::Error> {
+        let abs_path = self.abs_path(path);
+        let is_dir = try!(fs::metadata(&abs_path)).is_dir();
+
         self.patterns.iter().fold(Ok(false), |acc_wrapped, pattern| {
             let acc = try!(acc_wrapped);
 
@@ -43,24 +48,33 @@ impl<'b> File<'b> {
                 return Ok(false)
             }
 
-            let metadata = try!(fs::metadata(path));
-            let matches = pattern.matches(&path, metadata.is_dir());
+            let matches = pattern.matches(&abs_path, is_dir);
 
-            let result = if !pattern.negation {
-                acc || matches
-            } else if matches {
-                acc
+            let result = if pattern.negation {
+                if matches {
+                    acc
+                } else {
+                    false
+                }
             } else {
-                false
+                acc || matches
             };
 
             Ok(result)
         })
     }
+
+    fn abs_path(&self, path: &'b Path) -> PathBuf {
+        if path.is_absolute() {
+            path.to_owned()
+        } else {
+            self.root.join(path)
+        }
+    }
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     extern crate glob;
     extern crate tempdir;
 
@@ -69,6 +83,7 @@ mod test {
     use std::fs;
     use std::io::Write;
     use std::path::{Path,PathBuf};
+    use test::Bencher;
 
     struct TestEnv<'a> {
         gitignore: &'a Path,
@@ -102,6 +117,24 @@ mod test {
             for path in test_env.paths.iter() {
                 assert!(file.matches(path.as_path()).unwrap());
             }
+        })
+    }
+
+    #[bench]
+    fn bench_new_file(b: &mut Bencher) {
+        let path = Path::new(".gitignore");
+        b.iter(|| {
+            File::new(path, None).unwrap();
+        })
+    }
+
+    #[bench]
+    fn bench_file_match(b: &mut Bencher) {
+        let file = File::new(Path::new(".gitignore"), None).unwrap();
+        let path = Path::new("/dev/null");
+
+        b.iter(|| {
+            file.matches(path).unwrap();
         })
     }
 

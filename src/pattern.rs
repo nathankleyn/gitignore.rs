@@ -48,9 +48,7 @@ impl<'c> Pattern<'c> {
             return self.negation
         }
 
-        let joined_path = self.root.join(path);
-        let abs_path = if path.is_absolute() { path } else { &joined_path as &Path };
-        let result = self.pattern.matches_path_with(&abs_path, &self.match_options());
+        let result = self.pattern.matches_path_with(&path, &self.match_options());
 
         if self.negation {
             !result
@@ -94,11 +92,12 @@ impl<'c> Pattern<'c> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     extern crate glob;
 
     use super::Pattern;
     use std::path::Path;
+    use test::Bencher;
 
     #[test]
     fn test_new_git_ignore_pattern() {
@@ -206,5 +205,16 @@ mod test {
         // returns false when given a path that is a file and it matches a directory only pattern
         let gip = Pattern::new("foo/", Path::new("/")).unwrap();
         assert!(!gip.matches(Path::new("foo"), false));
+    }
+
+    #[bench]
+    fn bench_pattern_new(b: &mut Bencher) {
+        b.iter(|| Pattern::new("foo", Path::new("/")))
+    }
+
+    #[bench]
+    fn bench_pattern_match(b: &mut Bencher) {
+        let gip = Pattern::new("foo", Path::new("/")).unwrap();
+        b.iter(|| gip.matches(Path::new("foo"), false))
     }
 }
