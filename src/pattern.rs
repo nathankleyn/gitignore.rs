@@ -95,7 +95,7 @@ mod tests {
     use test::Bencher;
 
     #[test]
-    fn test_new_git_ignore_pattern() {
+    fn test_new_gitignore_pattern() {
         let gip = Pattern::new("*.foo", Path::new("/wing")).unwrap();
         assert!(gip.pattern == glob::Pattern::new("*.foo").unwrap());
         assert!(gip.anchored == false);
@@ -104,7 +104,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new_anchored_git_ignore_pattern() {
+    fn test_new_anchored_gitignore_pattern() {
         let gip = Pattern::new("/*.foo", Path::new("/wing")).unwrap();
         assert!(gip.pattern == glob::Pattern::new("/wing/*.foo").unwrap());
         assert!(gip.anchored == true);
@@ -113,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new_anchored_git_ignore_pattern_with_trailing_slash_on_root() {
+    fn test_new_anchored_gitignore_pattern_with_trailing_slash_on_root() {
         let gip = Pattern::new("/*.foo", Path::new("/wing/")).unwrap();
         assert!(gip.pattern == glob::Pattern::new("/wing/*.foo").unwrap());
         assert!(gip.anchored == true);
@@ -122,7 +122,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new_directory_git_ignore_pattern() {
+    fn test_new_directory_gitignore_pattern() {
         let gip = Pattern::new("foo/", Path::new("/wing")).unwrap();
         assert!(gip.pattern == glob::Pattern::new("*foo").unwrap());
         assert!(gip.anchored == false);
@@ -131,7 +131,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new_negated_git_ignore_pattern() {
+    fn test_new_negated_gitignore_pattern() {
         let gip = Pattern::new("! *.foo", Path::new("/wing")).unwrap();
         assert!(gip.pattern == glob::Pattern::new("*.foo").unwrap());
         assert!(gip.anchored == false);

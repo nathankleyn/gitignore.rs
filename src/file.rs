@@ -132,7 +132,7 @@ mod tests {
 
     fn with_fake_repo<F>(ignore_contents: &str, files: Vec<&str>, callback: F)
         where F: Fn(&TestEnv) {
-        let dir = tempdir::TempDir::new("git_ignore_tests").unwrap();
+        let dir = tempdir::TempDir::new("gitignore_tests").unwrap();
 
         let paths = files.iter().map(|file| {
             let path = dir.path().join(file);

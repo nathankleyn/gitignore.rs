@@ -1,21 +1,32 @@
-# git_ignore.rs [![Build Status](https://travis-ci.org/nathankleyn/git_ignore.rs.svg)](https://travis-ci.org/nathankleyn/git_ignore.rs) [![Crates.io Version Of git_ignore](https://img.shields.io/crates/v/git_ignore.svg)](https://crates.io/crates/git_ignore)
+# gitignore.rs [![Build Status](https://travis-ci.org/nathankleyn/gitignore.rs.svg)](https://travis-ci.org/nathankleyn/gitignore.rs) [![Crates.io Version Of gitignore](https://img.shields.io/crates/v/gitignore.svg)](https://crates.io/crates/gitignore)
 
 This is an implementation of `.gitignore` parsing and matching in Rust. Use this library if you want to check whether a given path would be excluded by a `.gitignore` file.
 
 ## Usage
 
-The crate is called `git_ignore` and you can use it simply by depending on it via Cargo:
+The crate is called `gitignore` and you can it is available via [crates.io](https://crates.io/gitignore):
 
 ```toml
-[dependencies.git_ignore]
-git = "https://github.com/nathankleyn/git_ignore.rs.git"
+[dependencies]
+gitignore = "x.y.z"
 ```
 
-There is a [simple example binary](/src/bin/git_ignore.rs) which you can view to see how you might apply this library. A simple example is as follows:
+You can also use the Git version directory simply by depending on it via Cargo:
+
+```toml
+[dependencies.gitignore]
+git = "https://github.com/nathankleyn/gitignore.rs.git"
+```
+
+There are some useful [bundled binaries](/src/bin) which you can view to see how you might apply this library.
+
+## Examples
+
+A simple example is as follows:
 
 ```rust
 // Create a file
-let file = git_ignore::file::File::new(path_to_gitignore, None).unwrap();
+let file = gitignore::file::File::new(path_to_gitignore, None).unwrap();
 
 // This returns a bool as to whether the file matches a rule in the .gitignore file.
 file.matches(&path).unwrap();

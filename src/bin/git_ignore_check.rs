@@ -1,6 +1,6 @@
-extern crate git_ignore;
+extern crate gitignore;
 
-use git_ignore::file::File;
+use gitignore::file::File;
 
 use std::env;
 
