@@ -48,13 +48,8 @@ impl<'c> Pattern<'c> {
             return self.negation
         }
 
-        let result = self.pattern.matches_path_with(&path, &self.match_options());
-
-        if self.negation {
-            !result
-        } else {
-            result
-        }
+        // XOR the two together to calculate the match.
+        self.negation ^ self.pattern.matches_path_with(&path, &self.match_options())
     }
 
     fn abs_pattern(pattern: &str, root: &Path, anchored: bool) -> String {

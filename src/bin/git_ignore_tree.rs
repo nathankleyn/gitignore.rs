@@ -27,14 +27,10 @@ pub fn main() {
                 continue;
             }
 
-            let metadata = fs::metadata(&path);
-            if metadata.is_err() {
-                continue;
-            }
-
             println!("{}", path.to_str().unwrap());
 
-            if metadata.unwrap().is_dir() {
+            let metadata = fs::metadata(&path);
+            if !metadata.is_err() && metadata.unwrap().is_dir() {
                 roots.push(path);
             }
         }

@@ -1,6 +1,7 @@
 extern crate git_ignore;
 
 use git_ignore::file::File;
+
 use std::env;
 
 /// Given a list of files, check the status of these files and whether they are excluded because

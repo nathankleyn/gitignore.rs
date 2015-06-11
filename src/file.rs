@@ -38,30 +38,22 @@ impl<'b> File<'b> {
 
     pub fn matches(&self, path: &'b Path) -> Result<bool, error::Error> {
         let abs_path = self.abs_path(path);
-        let is_dir = try!(fs::metadata(&abs_path)).is_dir();
+        let directory = try!(fs::metadata(&abs_path)).is_dir();
 
-        self.patterns.iter().fold(Ok(false), |acc_wrapped, pattern| {
-            let acc = try!(acc_wrapped);
-
+        Ok(self.patterns.iter().fold(false, |acc, pattern| {
             // Save cycles - only run negations if there's anything to actually negate!
             if pattern.negation && !acc {
-                return Ok(false)
+                return false;
             }
 
-            let matches = pattern.matches(&abs_path, is_dir);
+            let matches = pattern.matches(&abs_path, directory);
 
-            let result = if pattern.negation {
-                if matches {
-                    acc
-                } else {
-                    false
-                }
-            } else {
+            if !pattern.negation {
                 acc || matches
-            };
-
-            Ok(result)
-        })
+            } else {
+                matches && acc
+            }
+        }))
     }
 
     fn abs_path(&self, path: &'b Path) -> PathBuf {
