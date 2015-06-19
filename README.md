@@ -2,6 +2,8 @@
 
 This is an implementation of `.gitignore` parsing and matching in Rust. Use this library if you want to check whether a given path would be excluded by a `.gitignore` file.
 
+It currently builds on both nighly and stable versions of Rust.
+
 ## Usage
 
 The crate is called `gitignore` and you can it is available via [crates.io](https://crates.io/gitignore):
