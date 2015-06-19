@@ -1,7 +1,5 @@
 extern crate gitignore;
 
-use gitignore::file::File;
-
 use std::env;
 
 /// Given a list of files, check the status of these files and whether they are excluded because
@@ -9,11 +7,11 @@ use std::env;
 pub fn main() {
     let pwd = env::current_dir().unwrap();
     let gitignore_path = pwd.join(".gitignore");
-    let file = File::new(&gitignore_path, None).unwrap();
+    let file = gitignore::File::new(&gitignore_path).unwrap();
 
     for arg in env::args().skip(1) {
         let path = pwd.join(&arg);
-        let matches = file.matches(&path).unwrap();
+        let matches = file.is_excluded(&path).unwrap();
         println!("File: {}, Excluded: {}", arg, matches);
     }
 }

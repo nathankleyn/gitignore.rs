@@ -5,6 +5,7 @@ use std::fmt;
 
 use std::io;
 
+/// Encapsulates all the types of errors this crate can produce.
 pub struct Error {
     repr: ErrorCause
 }

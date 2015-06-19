@@ -1,6 +1,5 @@
 extern crate gitignore;
 
-use gitignore::file::File;
 use std::env;
 use std::fs;
 
@@ -10,7 +9,7 @@ use std::fs;
 pub fn main() {
     let pwd = env::current_dir().unwrap();
     let gitignore_path = pwd.join(".gitignore");
-    let file = File::new(&gitignore_path, None).unwrap();
+    let file = gitignore::File::new(&gitignore_path).unwrap();
 
     let mut roots = vec![pwd];
     while let Some(root) = roots.pop() {
@@ -22,7 +21,7 @@ pub fn main() {
                 continue;
             }
 
-            let matches = file.matches(&path);
+            let matches = file.is_excluded(&path);
             if matches.is_err() || matches.unwrap() {
                 continue;
             }

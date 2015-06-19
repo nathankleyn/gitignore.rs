@@ -5,6 +5,19 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
+/// Represents a `.gitignore` file. Use this to load the `.gitignore` file, parse the patterns,
+/// and then check if a given path would be excluded by any rules contained therein.
+///
+/// # Examples
+///
+/// ```
+/// # use std::env;
+/// # let pwd = env::current_dir().unwrap();
+/// # let gitignore_path = pwd.join(".gitignore");
+/// let file = gitignore::File::new(&gitignore_path).unwrap();
+/// # let path_to_test_if_excluded = pwd.join("target");
+/// assert!(file.is_excluded(&path_to_test_if_excluded).unwrap())
+/// ```
 #[derive(Debug)]
 pub struct File<'a> {
     patterns: Vec<pattern::Pattern<'a>>,
@@ -12,9 +25,13 @@ pub struct File<'a> {
 }
 
 impl<'b> File<'b> {
-    pub fn new(path: &'b Path, root: Option<&'b Path>) -> Result<File<'b>, error::Error> {
-        let root = root.unwrap_or(path.parent().unwrap());
-        let patterns = try!(File::patterns(path, root));
+    /// Parse the given `.gitignore` file for patterns, allowing any arbitrary path to be checked
+    /// against the set of rules to test for exclusion.
+    ///
+    /// The value of `gitignore_path` must be an absolute path.
+    pub fn new(gitignore_path: &'b Path) -> Result<File<'b>, error::Error> {
+        let root = gitignore_path.parent().unwrap();
+        let patterns = try!(File::patterns(gitignore_path, root));
 
         Ok(File {
             patterns: patterns,
@@ -22,6 +39,33 @@ impl<'b> File<'b> {
         })
     }
 
+    /// Returns true if, after checking against all the patterns found in the `.gitignore` file,
+    /// the given path is matched any of the globs (applying negated patterns as expected).
+    ///
+    /// If the value for `path` is not absolute, it will assumed to be relative to the current
+    /// working directory.
+    pub fn is_excluded(&self, path: &'b Path) -> Result<bool, error::Error> {
+        let abs_path = self.abs_path(path);
+        let directory = try!(fs::metadata(&abs_path)).is_dir();
+
+        Ok(self.patterns.iter().fold(false, |acc, pattern| {
+            // Save cycles - only run negations if there's anything to actually negate!
+            if pattern.negation && !acc {
+                return false;
+            }
+
+            let matches = pattern.is_excluded(&abs_path, directory);
+
+            if !pattern.negation {
+                acc || matches
+            } else {
+                matches && acc
+            }
+        }))
+    }
+
+    /// Given the path to the `.gitignore` file and the root folder within which it resides,
+    /// parse out all the patterns and collect them up into a vector of patterns.
     fn patterns(path: &'b Path, root: &'b Path) -> Result<Vec<pattern::Pattern<'b>>, error::Error> {
         let mut file = try!(fs::File::open(path));
         let mut s = String::new();
@@ -36,26 +80,8 @@ impl<'b> File<'b> {
         }).collect())
     }
 
-    pub fn matches(&self, path: &'b Path) -> Result<bool, error::Error> {
-        let abs_path = self.abs_path(path);
-        let directory = try!(fs::metadata(&abs_path)).is_dir();
-
-        Ok(self.patterns.iter().fold(false, |acc, pattern| {
-            // Save cycles - only run negations if there's anything to actually negate!
-            if pattern.negation && !acc {
-                return false;
-            }
-
-            let matches = pattern.matches(&abs_path, directory);
-
-            if !pattern.negation {
-                acc || matches
-            } else {
-                matches && acc
-            }
-        }))
-    }
-
+    /// Given a path, make it absolute if relative by joining it to a given root, otherwise leave
+    /// absolute as originally given.
     fn abs_path(&self, path: &'b Path) -> PathBuf {
         if path.is_absolute() {
             path.to_owned()
@@ -75,6 +101,8 @@ mod tests {
     use std::fs;
     use std::io::Write;
     use std::path::{Path,PathBuf};
+
+    #[cfg(feature = "nightly")]
     use test::Bencher;
 
     struct TestEnv<'a> {
@@ -85,9 +113,9 @@ mod tests {
     #[test]
     fn test_new_file_with_empty() {
         with_fake_repo("", vec!["bar.foo"], |test_env| {
-            let file = File::new(test_env.gitignore, None).unwrap();
+            let file = File::new(test_env.gitignore).unwrap();
             for path in test_env.paths.iter() {
-                assert!(!file.matches(path.as_path()).unwrap());
+                assert!(!file.is_excluded(path.as_path()).unwrap());
             }
         })
     }
@@ -95,9 +123,9 @@ mod tests {
     #[test]
     fn test_new_file_with_unanchored_wildcard() {
         with_fake_repo("*.foo", vec!["bar.foo"], |test_env| {
-            let file = File::new(test_env.gitignore, None).unwrap();
+            let file = File::new(test_env.gitignore).unwrap();
             for path in test_env.paths.iter() {
-                assert!(file.matches(path.as_path()).unwrap());
+                assert!(file.is_excluded(path.as_path()).unwrap());
             }
         })
     }
@@ -105,28 +133,30 @@ mod tests {
     #[test]
     fn test_new_file_with_anchored() {
         with_fake_repo("/out", vec!["out"], |test_env| {
-            let file = File::new(test_env.gitignore, None).unwrap();
+            let file = File::new(test_env.gitignore).unwrap();
             for path in test_env.paths.iter() {
-                assert!(file.matches(path.as_path()).unwrap());
+                assert!(file.is_excluded(path.as_path()).unwrap());
             }
         })
     }
 
+    #[cfg(feature = "nightly")]
     #[bench]
     fn bench_new_file(b: &mut Bencher) {
         let path = Path::new(".gitignore");
         b.iter(|| {
-            File::new(path, None).unwrap();
+            File::new(path).unwrap();
         })
     }
 
+    #[cfg(feature = "nightly")]
     #[bench]
     fn bench_file_match(b: &mut Bencher) {
-        let file = File::new(Path::new(".gitignore"), None).unwrap();
+        let file = File::new(Path::new(".gitignore")).unwrap();
         let path = Path::new("/dev/null");
 
         b.iter(|| {
-            file.matches(path).unwrap();
+            file.is_excluded(path).unwrap();
         })
     }
 
