@@ -20,7 +20,8 @@ You can also use the Git version directory simply by depending on it via Cargo:
 git = "https://github.com/nathankleyn/gitignore.rs.git"
 ```
 
-There are some useful [bundled binaries](/src/bin) which you can view to see how you might apply this library.
+There are some useful [bundled binaries](/src/bin) which you can view to see how you might apply this library. [The Rust
+docs are available to view](https://nathankleyn.com/gitignore.rs/gitignore/) as well.
 
 ## Examples
 
