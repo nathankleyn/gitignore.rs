@@ -181,8 +181,13 @@ mod tests {
                 path.file_name().unwrap().to_str().unwrap().to_string()
             ).collect();
 
-            // Does not include bar.foo, is ordered.
-            assert!(files == vec![".gitignore", "bar", "foo"]);
+            // We can't compare the vec directly, as the order can differ
+            // depending on underlying platform. Instead, let's break it
+            // apart into the respective assertions.
+            assert!(files.len() == 3);
+            assert!(files.contains(&".gitignore".to_string()));
+            assert!(files.contains(&"bar".to_string()));
+            assert!(files.contains(&"foo".to_string()));
         })
     }
 

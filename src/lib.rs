@@ -1,4 +1,4 @@
-//! Support for loading, parsing and matching paths against the rules in a ``.gitignore` file.
+//! Support for loading, parsing and matching paths against the rules in a `.gitignore` file.
 //!
 //! This create has been specifically crafted to have no dependencies on Git itself - all you need
 //! is a directory with a ``.gitignore` file in it, and a path you want to check is excluded by
