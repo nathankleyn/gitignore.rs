@@ -64,6 +64,39 @@ impl<'b> File<'b> {
         }))
     }
 
+    /// Returns a list of files that are not excluded by the rules in the loaded
+    /// `.gitignore` file. It recurses through all subdirectories and returns
+    /// everything that is not ignored.
+    pub fn included_files(&self) -> Result<Vec<PathBuf>, error::Error> {
+        let mut files: Vec<PathBuf> = vec![];
+        let mut roots = vec![self.root.to_path_buf()];
+
+        while let Some(root) = roots.pop() {
+            let entries = try!(fs::read_dir(root));
+
+            for entry in entries {
+                let path = try!(entry).path();
+                if path.ends_with(".git") {
+                    continue;
+                }
+
+                let matches = self.is_excluded(&path);
+                if matches.is_err() || try!(matches) {
+                    continue;
+                }
+
+                files.push(path.to_path_buf());
+
+                let metadata = fs::metadata(&path);
+                if !metadata.is_err() && try!(metadata).is_dir() {
+                    roots.push(path);
+                }
+            }
+        }
+
+        Ok(files)
+    }
+
     /// Given the path to the `.gitignore` file and the root folder within which it resides,
     /// parse out all the patterns and collect them up into a vector of patterns.
     fn patterns(path: &'b Path, root: &'b Path) -> Result<Vec<pattern::Pattern<'b>>, error::Error> {
@@ -137,6 +170,19 @@ mod tests {
             for path in test_env.paths.iter() {
                 assert!(file.is_excluded(path.as_path()).unwrap());
             }
+        })
+    }
+
+    #[test]
+    fn test_included_files() {
+        with_fake_repo("*.foo", vec!["bar.foo", "foo", "bar"], |test_env| {
+            let file = File::new(test_env.gitignore).unwrap();
+            let files: Vec<String> = file.included_files().unwrap().iter().map(|path|
+                path.file_name().unwrap().to_str().unwrap().to_string()
+            ).collect();
+
+            // Does not include bar.foo, is ordered.
+            assert!(files == vec![".gitignore", "bar", "foo"]);
         })
     }
 

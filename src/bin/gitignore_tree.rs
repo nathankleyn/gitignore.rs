@@ -1,7 +1,6 @@
 extern crate gitignore;
 
 use std::env;
-use std::fs;
 
 /// Traverses the directory trees from the current working directory downwards, listing all the
 /// files that are _not_ excluded because of the .gitignore rules. The rules are also loaded from
@@ -11,27 +10,7 @@ pub fn main() {
     let gitignore_path = pwd.join(".gitignore");
     let file = gitignore::File::new(&gitignore_path).unwrap();
 
-    let mut roots = vec![pwd];
-    while let Some(root) = roots.pop() {
-        let entries = fs::read_dir(root);
-
-        for entry in entries.unwrap() {
-            let path = entry.unwrap().path();
-            if path.ends_with(".git") {
-                continue;
-            }
-
-            let matches = file.is_excluded(&path);
-            if matches.is_err() || matches.unwrap() {
-                continue;
-            }
-
-            println!("{}", path.to_str().unwrap());
-
-            let metadata = fs::metadata(&path);
-            if !metadata.is_err() && metadata.unwrap().is_dir() {
-                roots.push(path);
-            }
-        }
+    for path in file.included_files().unwrap() {
+        println!("{}", path.to_str().unwrap());
     }
 }
