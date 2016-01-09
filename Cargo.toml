@@ -11,7 +11,7 @@ repository = "https://github.com/nathankleyn/gitignore.rs"
 glob = "0.2.10"
 
 [dev-dependencies]
-tempdir = "0.3.0"
+tempdir = "0.3.4"
 
 [features]
 # Whether or not to enable compilation of features that only work on nightly. This is currently only benchmarks that
