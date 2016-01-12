@@ -1,6 +1,6 @@
 [package]
 name = "gitignore"
-version = "1.0.3"
+version = "1.0.4"
 authors = ["Nathan Kleyn <nathan@nathankleyn.com>"]
 description = "Implementation of .gitignore file parsing and glob testing in Rust."
 license = "MIT OR Apache-2.0"
