@@ -29,7 +29,7 @@ A simple example is as follows:
 
 ```rust
 // Create a file
-let file = gitignore::file::File::new(&path_to_gitignore).unwrap();
+let file = gitignore::File::new(&path_to_gitignore).unwrap();
 
 // This returns a bool as to whether the file matches a rule in the .gitignore file.
 file.is_excluded(&path).unwrap();
