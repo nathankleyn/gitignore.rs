@@ -40,28 +40,13 @@ impl<'b> File<'b> {
     }
 
     /// Returns true if, after checking against all the patterns found in the `.gitignore` file,
-    /// the given path is matched any of the globs (applying negated patterns as expected).
+    /// the given path is matched any of the globs (applying negated patterns as expected). Note
+    /// this function also returns false if the path does not exist.
     ///
     /// If the value for `path` is not absolute, it will assumed to be relative to the current
     /// working directory.
     pub fn is_excluded(&self, path: &'b Path) -> Result<bool, error::Error> {
-        let abs_path = self.abs_path(path);
-        let directory = try!(fs::metadata(&abs_path)).is_dir();
-
-        Ok(self.patterns.iter().fold(false, |acc, pattern| {
-            // Save cycles - only run negations if there's anything to actually negate!
-            if pattern.negation && !acc {
-                return false;
-            }
-
-            let matches = pattern.is_excluded(&abs_path, directory);
-
-            if !pattern.negation {
-                acc || matches
-            } else {
-                matches && acc
-            }
-        }))
+        self.included_files().map(|files| !files.contains(&path.to_path_buf()))
     }
 
     /// Returns a list of files that are not excluded by the rules in the loaded
@@ -80,7 +65,7 @@ impl<'b> File<'b> {
                     continue;
                 }
 
-                let matches = self.is_excluded(&path);
+                let matches = self.file_is_excluded(&path);
                 if matches.is_err() || try!(matches) {
                     continue;
                 }
@@ -95,6 +80,34 @@ impl<'b> File<'b> {
         }
 
         Ok(files)
+    }
+
+    /// Returns true if, after checking against all the patterns found in the `.gitignore` file,
+    /// the given path is matched any of the globs (applying negated patterns as expected).
+    ///
+    /// If the value for `path` is not absolute, it will assumed to be relative to the current
+    /// working directory.
+    ///
+    /// Note very importantly that this method _does not_ check if the parent directories are
+    /// excluded. This is only for determining if the file itself matched any rules.
+    fn file_is_excluded(&self, path: &'b Path) -> Result<bool, error::Error> {
+        let abs_path = self.abs_path(path);
+        let directory = try!(fs::metadata(&abs_path)).is_dir();
+
+        Ok(self.patterns.iter().fold(false, |acc, pattern| {
+            // Save cycles - only run negations if there's anything to actually negate!
+            if pattern.negation && !acc {
+                return false;
+            }
+
+            let matches = pattern.is_excluded(&abs_path, directory);
+
+            if !pattern.negation {
+                acc || matches
+            } else {
+                matches && acc
+            }
+        }))
     }
 
     /// Given the path to the `.gitignore` file and the root folder within which it resides,
@@ -191,6 +204,23 @@ mod tests {
         })
     }
 
+    #[test]
+    fn test_nested_files() {
+        with_fake_repo("woo", vec!["win", "woo/hoo", "woo/boo/shoo"], |test_env| {
+            let file = File::new(test_env.gitignore).unwrap();
+            let files: Vec<String> = file.included_files().unwrap().iter().map(|path|
+                path.file_name().unwrap().to_str().unwrap().to_string()
+            ).collect();
+
+            // We can't compare the vec directly, as the order can differ
+            // depending on underlying platform. Instead, let's break it
+            // apart into the respective assertions
+            assert!(files.len() == 2);
+            assert!(files.contains(&".gitignore".to_string()));
+            assert!(files.contains(&"win".to_string()));
+        })
+    }
+
     #[cfg(feature = "nightly")]
     #[bench]
     fn bench_new_file(b: &mut Bencher) {
@@ -217,6 +247,7 @@ mod tests {
 
         let paths = files.iter().map(|file| {
             let path = dir.path().join(file);
+            path.parent().map(|parent| fs::create_dir_all(&parent));
             write_to_file(&path, "");
             path
         }).collect();
