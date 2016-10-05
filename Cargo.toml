@@ -1,6 +1,6 @@
 [package]
 name = "gitignore"
-version = "1.0.4"
+version = "1.0.5"
 authors = ["Nathan Kleyn <nathan@nathankleyn.com>"]
 description = "Implementation of .gitignore file parsing and glob testing in Rust."
 license = "MIT OR Apache-2.0"
@@ -8,10 +8,10 @@ documentation = "https://nathankleyn.com/gitignore.rs/gitignore/"
 repository = "https://github.com/nathankleyn/gitignore.rs"
 
 [dependencies]
-glob = "0.2.10"
+glob = "0.2.11"
 
 [dev-dependencies]
-tempdir = "0.3.4"
+tempdir = "0.3.5"
 
 [features]
 # Whether or not to enable compilation of features that only work on nightly. This is currently only benchmarks that
