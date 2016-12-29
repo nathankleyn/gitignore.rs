@@ -93,19 +93,12 @@ impl<'b> File<'b> {
     fn file_is_excluded(&self, path: &'b Path) -> Result<bool, error::Error> {
         let abs_path = self.abs_path(path);
         let directory = try!(fs::metadata(&abs_path)).is_dir();
-
         Ok(self.patterns.iter().fold(false, |acc, pattern| {
-            // Save cycles - only run negations if there's anything to actually negate!
-            if pattern.negation && !acc {
-                return false;
-            }
-
             let matches = pattern.is_excluded(&abs_path, directory);
-
-            if !pattern.negation {
-                acc || matches
+            if !matches {
+                acc
             } else {
-                matches && acc
+                !pattern.negation
             }
         }))
     }
@@ -116,7 +109,6 @@ impl<'b> File<'b> {
         let mut file = try!(fs::File::open(path));
         let mut s = String::new();
         try!(file.read_to_string(&mut s));
-
         Ok(s.lines().filter_map(|line| {
             if !line.trim().is_empty() {
                 pattern::Pattern::new(line, root).ok()
@@ -221,6 +213,24 @@ mod tests {
         })
     }
 
+    #[test]
+    fn test_included_by_ignore_pattern() {
+        with_fake_repo("*\n!assets/\n!assets/**\n!.git*", vec!["assets/foo/bar.html"], |test_env| {
+            let file = File::new(test_env.gitignore).unwrap();
+            let files: Vec<String> = file.included_files().unwrap().iter().map(|path|
+                path.file_name().unwrap().to_str().unwrap().to_string()
+            ).collect();
+
+            // We can't compare the vec directly, as the order can differ
+            // depending on underlying platform. Instead, let's break it
+            // apart into the respective assertions
+            assert!(files.len() == 4);
+            assert!(files.contains(&".gitignore".to_string()));
+            assert!(files.contains(&"assets".to_string()));
+            assert!(files.contains(&"foo".to_string()));
+            assert!(files.contains(&"bar.html".to_string()));
+        })
+    }
     #[cfg(feature = "nightly")]
     #[bench]
     fn bench_new_file(b: &mut Bencher) {

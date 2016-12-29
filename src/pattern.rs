@@ -231,6 +231,30 @@ mod tests {
         assert!(!gip.is_excluded(Path::new("foo"), false));
     }
 
+    #[test]
+    fn test_double_star_matches_nested_dir() {
+        let gip = Pattern::new("foo/**", Path::new("/")).unwrap();
+        assert!(gip.is_excluded(Path::new("foo/bar"), true));
+    }
+
+    #[test]
+    fn test_negate_double_star_matches_nested_dir() {
+        let gip = Pattern::new("!foo/**", Path::new("/")).unwrap();
+        assert!(!gip.is_excluded(Path::new("foo/bar"), true));
+    }
+
+    #[test]
+    fn test_double_star_matches_nested_file() {
+        let gip = Pattern::new("foo/**", Path::new("/")).unwrap();
+        assert!(gip.is_excluded(Path::new("foo/bar/index.html"), false));
+    }
+
+    #[test]
+    fn test_negate_double_star_matches_nested_file() {
+        let gip = Pattern::new("!foo/**", Path::new("/")).unwrap();
+        assert!(!gip.is_excluded(Path::new("foo/bar/index.html"), false));
+    }
+
     #[cfg(feature = "nightly")]
     #[bench]
     fn bench_pattern_new(b: &mut Bencher) {
