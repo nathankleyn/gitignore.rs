@@ -12,14 +12,31 @@
 //! the `.gitignore` file in the given directory.
 
 #![cfg_attr(all(test, feature = "nightly"), feature(test))]
+#![recursion_limit = "1024"]
 
 #[cfg(all(test, feature = "nightly"))]
 extern crate test;
 
-pub use error::Error;
+#[macro_use]
+extern crate error_chain;
+extern crate glob;
+
 pub use file::File;
 pub use pattern::Pattern;
 
-mod error;
+pub use error::Error;
+pub use error::ErrorKind;
+
+mod error {
+    // Create the Error, ErrorKind, ResultExt, and Result types
+    error_chain!{
+        foreign_links {
+            IoError(::std::io::Error);
+            PaternError(::glob::PatternError);
+        }
+    }
+}
+
+// mod error;
 mod file;
 mod pattern;
