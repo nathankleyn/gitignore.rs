@@ -8,6 +8,7 @@ documentation = "https://nathankleyn.com/gitignore.rs/gitignore/"
 repository = "https://github.com/nathankleyn/gitignore.rs"
 
 [dependencies]
+error-chain = "0.10.0"
 glob = "0.3"
 
 [dev-dependencies]
