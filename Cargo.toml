@@ -9,12 +9,12 @@ repository = "https://github.com/nathankleyn/gitignore.rs"
 
 [dependencies]
 error-chain = "0.10.0"
-glob = "0.3"
+globset = "0.2.0"
 
 [dev-dependencies]
 tempdir = "0.3.5"
 
 [features]
-# Whether or not to enable compilation of features that only work on nightly. This is currently only benchmarks that
-# need this.
-nightly = []
+# Whether or not to enable compilation of benchmarks which currently require
+# a nightly version of Rust because the test crate is marked as unstable.
+benchmarks = []

@@ -11,32 +11,31 @@
 //! `core.excludesFile` (the user excludes file); rather, it will only load patterns specified in
 //! the `.gitignore` file in the given directory.
 
-#![cfg_attr(all(test, feature = "nightly"), feature(test))]
+// FIXME: Remove this when we're done developing!
+#![allow(dead_code)]
 #![recursion_limit = "1024"]
-
-#[cfg(all(test, feature = "nightly"))]
-extern crate test;
+#![cfg_attr(all(test, feature = "benchmarks"), feature(test))]
+#![feature(test)]
 
 #[macro_use]
 extern crate error_chain;
-extern crate glob;
+extern crate globset;
 
-pub use file::File;
-pub use pattern::Pattern;
+#[cfg(all(test, feature = "benchmarks"))]
+extern crate test;
 
-pub use error::Error;
-pub use error::ErrorKind;
+pub use errors::{Error, ErrorKind};
 
-mod error {
+mod errors {
     // Create the Error, ErrorKind, ResultExt, and Result types
     error_chain!{
         foreign_links {
             IoError(::std::io::Error);
-            PaternError(::glob::PatternError);
+            PatternError(::globset::Error);
         }
     }
 }
 
-// mod error;
 mod file;
-mod pattern;
+mod repo;
+mod ruleset;
