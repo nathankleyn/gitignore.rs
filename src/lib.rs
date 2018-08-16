@@ -15,7 +15,6 @@
 #![allow(dead_code)]
 #![recursion_limit = "1024"]
 #![cfg_attr(all(test, feature = "benchmarks"), feature(test))]
-#![feature(test)]
 
 #[macro_use]
 extern crate error_chain;

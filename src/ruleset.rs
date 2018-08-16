@@ -2,6 +2,12 @@ use errors::*;
 use globset::{Candidate, GlobBuilder, GlobSet, GlobSetBuilder};
 use std::path::{Path, PathBuf};
 
+/// Represents a set of rules that can be checked against to see if a path should be ignored within
+/// a Git repository.
+///
+/// The performance characteristics of this are such that it is much better to try and make a single
+/// instance of this to check as many paths against as possible - this is because the highest cost
+/// is in constructing it, but checking against the compiled patterns is extremely cheap.
 pub struct RuleSet {
     root: PathBuf,
     rules: Vec<Rule>,
@@ -9,11 +15,15 @@ pub struct RuleSet {
 }
 
 impl RuleSet {
-    pub fn new<P: AsRef<Path>>(root: P, raw_rules: Vec<String>) -> Result<RuleSet> {
-        let cleaned_root = Self::strip_prefix(root, Path::new("./")); // FIXME: Not zero-copy.
+    /// Construct a ruleset, given a path that is the root of the repository, and a set of rules,
+    /// which is a vector
+    pub fn new<'a, P, I, S>(root: P, raw_rules: I) -> Result<RuleSet>
+        where P: AsRef<Path>, I: IntoIterator<Item = &'a S>, S: AsRef<str> + 'a {
+         // FIXME: Is there a better way without needing to hardcode a path here?
+        let cleaned_root = Self::strip_prefix(root, Path::new("./"));
 
         let lines =
-            raw_rules.iter().map(RuleSet::parse_line).collect::<Result<Vec<ParsedLine>>>()?;
+            raw_rules.into_iter().map(RuleSet::parse_line).collect::<Result<Vec<ParsedLine>>>()?;
 
         let rules: Vec<Rule> = lines.iter().filter_map(|parsed_line| {
             match parsed_line {
@@ -42,6 +52,8 @@ impl RuleSet {
         })
     }
 
+    /// Check if the given path should be considered ignored as per the rules contained within
+    /// the current ruleset.
     pub fn is_ignored<P: AsRef<Path>>(&self, path: P, is_dir: bool) -> bool {
         let mut cleaned_path = Self::strip_prefix(path.as_ref(), Path::new("./"));
         cleaned_path = Self::strip_prefix(cleaned_path.as_path(), &self.root);
@@ -64,6 +76,9 @@ impl RuleSet {
         false
     }
 
+    /// Given a raw pattern, parse it and attempt to construct a rule out of it. The pattern pattern
+    /// rules are implemented as described in the documentation for Git at
+    /// https://git-scm.com/docs/gitignore.
     fn parse_line<R: AsRef<str>>(raw_rule: R) -> Result<ParsedLine> {
         let mut pattern = raw_rule.as_ref().trim();
 
@@ -113,6 +128,8 @@ impl RuleSet {
         }))
     }
 
+    /// Given a path and a prefix, strip the prefix off the path. If the path does not begin with
+    /// the given prefix, then return the path as is.
     fn strip_prefix<P: AsRef<Path>, PR: AsRef<Path>>(path: P, prefix: PR) -> PathBuf {
         path.as_ref().strip_prefix(prefix.as_ref()).unwrap_or(path.as_ref()).to_path_buf()
     }
@@ -144,8 +161,8 @@ mod test {
     use super::RuleSet;
 
     fn ruleset_from_rules<P: AsRef<Path>, S: AsRef<str>>(root: P, raw_rules: S) -> RuleSet {
-        let rules = raw_rules.as_ref().lines().map(|s| s.to_string()).collect();
-        RuleSet::new(root, rules).unwrap()
+        let rules: Vec<String> = raw_rules.as_ref().lines().map(|s| s.to_string()).collect();
+        RuleSet::new(root, rules.iter()).unwrap()
     }
 
     macro_rules! ignored {
@@ -219,8 +236,7 @@ mod test {
     not_ignored!(ignot11, ROOT, "#foo", "#foo");
     not_ignored!(ignot12, ROOT, "\n\n\n", "foo");
     not_ignored!(ignot13, ROOT, "foo/**", "foo", true);
-    not_ignored!(
-        ignot14, "./third_party/protobuf", "m4/ltoptions.m4",
+    not_ignored!(ignot14, "./third_party/protobuf", "m4/ltoptions.m4",
         "./third_party/protobuf/csharp/src/packages/repositories.config");
     not_ignored!(ignot15, ROOT, "!/bar", "foo/bar");
 }
