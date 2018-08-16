@@ -20,21 +20,23 @@
 #![cfg_attr(all(test, feature = "benchmarks"), feature(test))]
 
 #[macro_use]
-extern crate error_chain;
+extern crate failure_derive;
 
 #[cfg(all(test, feature = "benchmarks"))]
 extern crate test;
 
-pub use crate::errors::{Error, ErrorKind};
-
 mod errors {
-    // Create the Error, ErrorKind, ResultExt, and Result types
-    error_chain!{
-        foreign_links {
-            IoError(::std::io::Error);
-            PatternError(::globset::Error);
-        }
-    }
+  #[derive(Fail, Debug)]
+  #[fail(display = "An IO error occured: {}", underlying)]
+  struct IoError {
+      underlying: ::std::io::Error
+  }
+
+  #[derive(Fail, Debug)]
+  #[fail(display = "A pattern error occured: {}", underlying)]
+  struct PatternError {
+      underlying: ::globset::Error
+  }
 }
 
 mod file;

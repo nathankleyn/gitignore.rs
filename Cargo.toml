@@ -11,7 +11,8 @@ documentation = "https://nathankleyn.com/gitignore.rs/gitignore/"
 repository = "https://github.com/nathankleyn/gitignore.rs"
 
 [dependencies]
-error-chain = "0.10.0"
+failure = "0.1.2"
+failure_derive = "0.1.2"
 globset = "0.2.0"
 
 [dev-dependencies]

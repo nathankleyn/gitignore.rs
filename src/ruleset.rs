@@ -1,4 +1,4 @@
-use crate::errors::*;
+use failure::Error;
 use globset::{Candidate, GlobBuilder, GlobSet, GlobSetBuilder};
 use std::path::{Path, PathBuf};
 
@@ -17,13 +17,13 @@ pub struct RuleSet {
 impl RuleSet {
     /// Construct a ruleset, given a path that is the root of the repository, and a set of rules,
     /// which is a vector
-    pub fn new<'a, P, I, S>(root: P, raw_rules: I) -> Result<RuleSet>
+    pub fn new<'a, P, I, S>(root: P, raw_rules: I) -> Result<RuleSet, Error>
         where P: AsRef<Path>, I: IntoIterator<Item = &'a S>, S: AsRef<str> + 'a {
          // FIXME: Is there a better way without needing to hardcode a path here?
         let cleaned_root = Self::strip_prefix(root, Path::new("./"));
 
         let lines =
-            raw_rules.into_iter().map(RuleSet::parse_line).collect::<Result<Vec<ParsedLine>>>()?;
+            raw_rules.into_iter().map(RuleSet::parse_line).collect::<Result<Vec<ParsedLine>, Error>>()?;
 
         let rules: Vec<Rule> = lines.iter().filter_map(|parsed_line| {
             match parsed_line {
@@ -79,7 +79,7 @@ impl RuleSet {
     /// Given a raw pattern, parse it and attempt to construct a rule out of it. The pattern pattern
     /// rules are implemented as described in the documentation for Git at
     /// https://git-scm.com/docs/gitignore.
-    fn parse_line<R: AsRef<str>>(raw_rule: R) -> Result<ParsedLine> {
+    fn parse_line<R: AsRef<str>>(raw_rule: R) -> Result<ParsedLine, Error> {
         let mut pattern = raw_rule.as_ref().trim();
 
         if pattern.is_empty() {
