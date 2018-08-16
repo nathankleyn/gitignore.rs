@@ -21,7 +21,6 @@
 
 #[macro_use]
 extern crate error_chain;
-extern crate globset;
 
 #[cfg(all(test, feature = "benchmarks"))]
 extern crate test;
