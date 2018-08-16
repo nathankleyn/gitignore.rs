@@ -11,8 +11,11 @@
 //! `core.excludesFile` (the user excludes file); rather, it will only load patterns specified in
 //! the `.gitignore` file in the given directory.
 
+#![feature(rust_2018_preview)]
+
 // FIXME: Remove this when we're done developing!
 #![allow(dead_code)]
+
 #![recursion_limit = "1024"]
 #![cfg_attr(all(test, feature = "benchmarks"), feature(test))]
 
