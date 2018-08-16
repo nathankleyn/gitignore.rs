@@ -26,7 +26,7 @@ extern crate globset;
 #[cfg(all(test, feature = "benchmarks"))]
 extern crate test;
 
-pub use errors::{Error, ErrorKind};
+pub use crate::errors::{Error, ErrorKind};
 
 mod errors {
     // Create the Error, ErrorKind, ResultExt, and Result types

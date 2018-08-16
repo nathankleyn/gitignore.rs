@@ -1,4 +1,4 @@
-use errors::*;
+use crate::errors::*;
 use globset::{Candidate, GlobBuilder, GlobSet, GlobSetBuilder};
 use std::path::{Path, PathBuf};
 
