@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 /// is in constructing it, but checking against the compiled patterns is extremely cheap.
 pub struct RuleSet {
     root: PathBuf,
-    rules: Vec<Rule>,
+    pub(crate) rules: Vec<Rule>,
     tester: GlobSet
 }
 
@@ -55,14 +55,14 @@ impl RuleSet {
     /// Check if the given path should be considered ignored as per the rules contained within
     /// the current ruleset.
     pub fn is_ignored<P: AsRef<Path>>(&self, path: P, is_dir: bool) -> bool {
+        // FIXME: Is there a better way without needing to hardcode a path here?
         let mut cleaned_path = Self::strip_prefix(path.as_ref(), Path::new("./"));
         cleaned_path = Self::strip_prefix(cleaned_path.as_path(), &self.root);
         let candidate = Candidate::new(&cleaned_path);
         let results = self.tester.matches_candidate(&candidate);
 
         for idx in results.iter().rev() {
-            let rule_idx = results[*idx];
-            let ref rule = self.rules[rule_idx];
+            let ref rule = self.rules[*idx];
 
             // We must backtrack through the finds until we find one that is_dir
             // and rule.dir_only agree on.
@@ -80,6 +80,7 @@ impl RuleSet {
     /// rules are implemented as described in the documentation for Git at
     /// https://git-scm.com/docs/gitignore.
     fn parse_line<R: AsRef<str>>(raw_rule: R) -> Result<ParsedLine, Error> {
+        // FIXME: Can we combine some of these string scans?
         let mut pattern = raw_rule.as_ref().trim();
 
         if pattern.is_empty() {
@@ -135,8 +136,8 @@ impl RuleSet {
     }
 }
 
-#[derive(Clone)]
-struct Rule {
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct Rule {
     pub pattern: String,
     /// Whether this rule is anchored. If a rule is anchored (contains a slash)
     /// then wildcards inside the rule are not allowed to match a `/` in the
@@ -251,8 +252,8 @@ mod benchmark {
 
     // FIXME: DRY this up, perhaps with a test utils module.
     fn ruleset_from_rules<P: AsRef<Path>, S: AsRef<str>>(root: P, raw_rules: S) -> RuleSet {
-        let rules = raw_rules.as_ref().lines().map(|s| s.to_string()).collect();
-        RuleSet::new(root, rules).unwrap()
+        let rules: Vec<String> = raw_rules.as_ref().lines().map(|s| s.to_string()).collect();
+        RuleSet::new(root, rules.iter()).unwrap()
     }
 
     #[bench]

@@ -39,6 +39,6 @@ mod errors {
   }
 }
 
-mod file;
+mod ignore_file;
 mod repo;
 mod ruleset;
