@@ -6,7 +6,7 @@ It currently builds on both nighly and stable versions of Rust.
 
 ## Usage
 
-The crate is called `gitignore` and you can it is available via [crates.io](https://crates.io/gitignore):
+The crate is called `gitignore` and you can it is available via [crates.io](https://crates.io/crates/gitignore):
 
 ```toml
 [dependencies]
