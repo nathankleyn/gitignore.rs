@@ -37,19 +37,13 @@ impl<'c> Pattern<'c> {
 
         if negation {
             parsed_pattern.remove(0);
-            parsed_pattern = parsed_pattern.trim_left().to_string();
+            parsed_pattern = parsed_pattern.trim_start().to_string();
         }
 
         let abs_pattern = Pattern::abs_pattern(&parsed_pattern, root, anchored);
-        let pattern = try!(glob::Pattern::new(&abs_pattern));
+        let pattern = glob::Pattern::new(&abs_pattern)?;
 
-        Ok(Pattern {
-            pattern: pattern,
-            anchored: anchored,
-            negation: negation,
-            directory: directory,
-            root: root
-        })
+        Ok(Pattern { pattern, anchored, negation, directory, root })
     }
 
     /// Returns true if the given path is matched by the current pattern, and hence would be
@@ -87,7 +81,7 @@ impl<'c> Pattern<'c> {
     fn abs_pattern_anchored(pattern: &str, root: &Path) -> String {
         let mut root_path = root.to_str().unwrap().to_string();
 
-        if root_path.ends_with("/") {
+        if root_path.ends_with('/') {
             root_path.pop();
         }
 

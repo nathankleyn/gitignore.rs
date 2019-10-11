@@ -36,9 +36,9 @@ impl error::Error for Error {
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match self.repr {
-            ErrorCause::IoError(ref err) => Some(err as &error::Error),
+            ErrorCause::IoError(ref err) => Some(err as &dyn error::Error),
             _ => None
         }
     }
