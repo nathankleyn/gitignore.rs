@@ -68,7 +68,7 @@ impl<'c> Pattern<'c> {
         }
 
         // XOR the two together to calculate the match.
-        self.negation ^ self.pattern.matches_path_with(&path, &self.match_options())
+        self.negation ^ self.pattern.matches_path_with(&path, self.match_options())
     }
 
     /// Take the given pattern as a glob, and if anchoring is required, join the given root to the
