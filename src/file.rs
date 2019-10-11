@@ -31,12 +31,9 @@ impl<'b> File<'b> {
     /// The value of `gitignore_path` must be an absolute path.
     pub fn new(gitignore_path: &'b Path) -> Result<File<'b>, error::Error> {
         let root = gitignore_path.parent().unwrap();
-        let patterns = try!(File::patterns(gitignore_path, root));
+        let patterns = File::patterns(gitignore_path, root)?;
 
-        Ok(File {
-            patterns: patterns,
-            root: root
-        })
+        Ok(File { patterns, root })
     }
 
     /// Returns true if, after checking against all the patterns found in the `.gitignore` file,
@@ -57,23 +54,23 @@ impl<'b> File<'b> {
         let mut roots = vec![self.root.to_path_buf()];
 
         while let Some(root) = roots.pop() {
-            let entries = try!(fs::read_dir(root));
+            let entries = fs::read_dir(root)?;
 
             for entry in entries {
-                let path = try!(entry).path();
+                let path = entry?.path();
                 if path.ends_with(".git") {
                     continue;
                 }
 
                 let matches = self.file_is_excluded(&path);
-                if matches.is_err() || try!(matches) {
+                if matches.is_err() || matches? {
                     continue;
                 }
 
                 files.push(path.to_path_buf());
 
                 let metadata = fs::metadata(&path);
-                if !metadata.is_err() && try!(metadata).is_dir() {
+                if metadata.is_ok() && metadata?.is_dir() {
                     roots.push(path);
                 }
             }
@@ -92,7 +89,7 @@ impl<'b> File<'b> {
     /// excluded. This is only for determining if the file itself matched any rules.
     fn file_is_excluded(&self, path: &'b Path) -> Result<bool, error::Error> {
         let abs_path = self.abs_path(path);
-        let directory = try!(fs::metadata(&abs_path)).is_dir();
+        let directory = fs::metadata(&abs_path)?.is_dir();
         Ok(self.patterns.iter().fold(false, |acc, pattern| {
             let matches = pattern.is_excluded(&abs_path, directory);
             if !matches {
@@ -106,9 +103,9 @@ impl<'b> File<'b> {
     /// Given the path to the `.gitignore` file and the root folder within which it resides,
     /// parse out all the patterns and collect them up into a vector of patterns.
     fn patterns(path: &'b Path, root: &'b Path) -> Result<Vec<pattern::Pattern<'b>>, error::Error> {
-        let mut file = try!(fs::File::open(path));
+        let mut file = fs::File::open(path)?;
         let mut s = String::new();
-        try!(file.read_to_string(&mut s));
+        file.read_to_string(&mut s)?;
         Ok(s.lines().filter_map(|line| {
             if !line.trim().is_empty() {
                 pattern::Pattern::new(line, root).ok()
@@ -266,7 +263,7 @@ mod tests {
         write_to_file(gitignore.as_path(), ignore_contents);
         let test_env = TestEnv {
             gitignore: gitignore.as_path(),
-            paths: paths
+            paths
         };
 
         callback(&test_env);
