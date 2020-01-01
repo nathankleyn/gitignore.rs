@@ -93,17 +93,17 @@ impl RuleSet {
 
         let negation = pattern.starts_with('!');
         if negation {
-            pattern = pattern.trim_left_matches('!').trim();
+            pattern = pattern.trim_start_matches('!').trim();
         }
 
         let dir_only = pattern.ends_with('/');
         if dir_only {
-            pattern = pattern.trim_right_matches('/').trim();
+            pattern = pattern.trim_end_matches('/').trim();
         }
 
         let absolute = pattern.starts_with('/');
         if absolute {
-            pattern = pattern.trim_left_matches('/');
+            pattern = pattern.trim_start_matches('/');
         }
 
         let anchored = absolute || pattern.contains('/');
