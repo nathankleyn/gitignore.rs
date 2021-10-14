@@ -3,8 +3,9 @@ use failure::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub struct IgnoreFile {
     ruleset: RuleSet
 }
@@ -12,9 +13,8 @@ pub struct IgnoreFile {
 /// Given a single specific gitignore style file, allow matching against
 /// the rules within that file.
 impl IgnoreFile {
-    pub fn new<P: AsRef<Path>, P2: AsRef<Path>>(root: P, path: P2) -> Result<IgnoreFile, Error> {
-        let file = File::open(path)?;
-        let lines: Vec<String> = BufReader::new(file).lines().flat_map(|line| line.ok()).collect();
+    pub fn new<P: AsRef<Path>, P2: Lines>(root: P, lines_source: P2) -> Result<IgnoreFile, Error> {
+        let lines: Vec<String> = lines_source.lines()?;
         let rule_set = RuleSet::new(root, lines.as_slice())?;
 
         Ok(IgnoreFile {
@@ -31,7 +31,6 @@ impl IgnoreFile {
 mod test {
     use super::{IgnoreFile, RuleSet};
     use std::path::PathBuf;
-
     macro_rules! ignore_file_from_test_repo {
         ($ignore_path:expr) => {
             {
@@ -66,5 +65,51 @@ mod test {
         let file = ignore_file_from_test_repo!(".gitignore");
 
         assert_eq!(file.ruleset.rules, ruleset_from_rules("*.no\nnot_me_either/\n/or_even_me").rules)
+    }
+
+    #[test]
+    fn allows_passing_rows() {
+        let ignore = IgnoreFile::new("/a/b/c/d", vec!["*.rs", "blah", "kuku"]);
+        println!("{:?}", ignore);
+    }
+}
+
+
+pub trait Lines {
+    fn lines(&self) -> Result<Vec<String>, Error>;
+}
+
+impl Lines for &str {
+    fn lines(&self) -> Result<Vec<String>, Error> {
+        lines(self)
+    }
+}
+
+impl Lines for PathBuf {
+    fn lines(&self) -> Result<Vec<String>, Error> {
+        lines(self)
+    }
+}
+
+impl Lines for &PathBuf {
+    fn lines(&self) -> Result<Vec<String>, Error> {
+        lines(self)
+    }
+}
+
+pub fn lines<T>(thing: T) -> Result<Vec<String>, Error> where T: AsRef<Path> {
+    let file = File::open(thing)?;
+    let lines: Vec<String> = BufReader::new(file).lines().flat_map(|line| line.ok()).collect();
+    Ok(lines)
+}
+impl Lines for Vec<String> {
+    fn lines(&self) -> Result<Vec<String>, Error> {
+        Ok(self.clone())
+    }
+}
+
+impl Lines for Vec<&str> {
+    fn lines(&self) -> Result<Vec<String>, Error> {
+        Ok(self.iter().map(|x| x.to_string()).collect())
     }
 }

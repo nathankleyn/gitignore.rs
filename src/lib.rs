@@ -23,20 +23,20 @@ extern crate failure_derive;
 #[cfg(all(test, feature = "benchmarks"))]
 extern crate test;
 
-mod errors {
+pub mod errors {
   #[derive(Fail, Debug)]
   #[fail(display = "An IO error occured: {}", underlying)]
-  struct IoError {
+  pub struct IoError {
       underlying: ::std::io::Error
   }
 
   #[derive(Fail, Debug)]
   #[fail(display = "A pattern error occured: {}", underlying)]
-  struct PatternError {
+  pub struct PatternError {
       underlying: ::globset::Error
   }
 }
 
-mod ignore_file;
-mod repo;
-mod ruleset;
+pub mod ignore_file;
+pub mod repo;
+pub mod ruleset;

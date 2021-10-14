@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 /// The performance characteristics of this are such that it is much better to try and make a single
 /// instance of this to check as many paths against as possible - this is because the highest cost
 /// is in constructing it, but checking against the compiled patterns is extremely cheap.
+#[derive(Debug)]
 pub struct RuleSet {
     root: PathBuf,
     pub(crate) rules: Vec<Rule>,

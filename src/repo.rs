@@ -2,7 +2,7 @@ use crate::ignore_file::*;
 use failure::Error;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-
+#[derive(Debug)]
 pub struct Repo {
     ignore_files: HashMap<PathBuf, IgnoreFile>
 }
