@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 pub struct Repo {
+    root: PathBuf,
     ignore_files: HashMap<PathBuf, IgnoreFile>
 }
 
@@ -20,7 +21,8 @@ impl Repo {
                 .collect();
 
         Ok(Repo {
-            ignore_files: ignore_files
+            root: root.as_ref().to_path_buf(),
+            ignore_files,
         })
     }
 
@@ -30,13 +32,28 @@ impl Repo {
         // Try the deepest first, recursing up to the root.
         // If a file is excluded by an ignore file, stop recursing (?)
         // (FIXME: is is possible to be re-included by a higher-up file?)
-        println!("{:?}", self.ignore_files.keys());
+        // @bkuster say: no: you can only be negated by a lower-down file
+        // println!("{:?}", self.ignore_files.keys());
+        
+        let mut abs_path = path.as_ref().to_path_buf();
+        if abs_path.is_relative() {
+            abs_path = self.root.join(&path);
+        }
+        let ancestors: Vec<&Path> = abs_path.parent()
+            .unwrap()
+            .ancestors()
+            .filter(|&ancestor| ancestor.starts_with(&self.root))
+            .collect();
 
-        // path.parent().join(".gitignore")
-        // recurse until path.parent() == root
-        // find matching ignorefiles
-
-        self.ignore_files.values().any(|ignore_file| ignore_file.is_ignored(&path, is_dir))
+        println!("{:?} {:?}", path.as_ref(), &ancestors);
+        self.ignore_files
+            .iter()
+            .filter(|&(ignore_file_path, _)| {
+                ancestors.iter().any(|&a| a == ignore_file_path.parent().unwrap())
+            })
+            .any(|(ignore_file_path, ignore_file)| {
+                ignore_file.is_ignored(&path, is_dir)
+            })
     }
 }
 
@@ -65,6 +82,7 @@ mod test {
         assert!(!repo.is_ignored(".gitignore", false));
         assert!(!repo.is_ignored("also_include_me", false));
         assert!(!repo.is_ignored("include_me", false));
+        assert!(!repo.is_ignored("im_included/hello.greeting", false));
         assert!(!repo.is_ignored("a_dir/a_nested_dir/.gitignore", false));
         // FIXME: This last test won't work until we do cascading properly.
         // assert!(!repo.is_ignored("a_dir/a_nested_dir/deeper_still/bit_now_i_work.no", false));
@@ -74,11 +92,25 @@ mod test {
     fn is_ignored_is_true_for_all_expected_files() {
         let repo = test_repo!();
 
-
         assert!(repo.is_ignored("not_me.no", false));
         assert!(repo.is_ignored("or_even_me", false));
         assert!(repo.is_ignored("or_me.no", false));
         assert!(repo.is_ignored("a_dir/a_nested_dir/deeper_still/hello.greeting", false));
         assert!(repo.is_ignored("a_dir/a_nested_dir/deeper_still/hola.greeting", false));
+    }
+
+    #[test]
+    fn is_ignored_is_false_for_all_expected_directories() {
+        let repo = test_repo!();
+
+        assert!(!repo.is_ignored("im_included", true));
+        assert!(!repo.is_ignored("a_dir/a_nested_dir", true));
+    }
+
+    #[test]
+    fn is_ignored_is_true_for_all_expected_directories() {
+        let repo = test_repo!();
+
+        assert!(repo.is_ignored("not_me_either", true));
     }
 }
