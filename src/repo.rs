@@ -100,6 +100,8 @@ mod test {
         assert!(repo.is_ignored("or_me.no", false));
         assert!(repo.is_ignored("a_dir/a_nested_dir/deeper_still/hello.greeting", false));
         assert!(repo.is_ignored("a_dir/a_nested_dir/deeper_still/hola.greeting", false));
+        // FIXME properly handle
+        // assert!(repo.is_ignored("not_me_either/not_me.neg", false));
     }
 
     #[test]
