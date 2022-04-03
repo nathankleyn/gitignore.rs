@@ -2,6 +2,7 @@ use crate::ignore_file::*;
 use failure::Error;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use crate::ruleset::IgnoreResult;
 
 pub struct Repo {
     root: PathBuf,
@@ -32,7 +33,7 @@ impl Repo {
             abs_path = self.root.join(&path);
         }
 
-        abs_path.parent()
+        let result = abs_path.parent()// XXX should we catch root here? or add a root guard?
             .unwrap()
             .ancestors()
             .filter_map(|ancestor| {
@@ -43,7 +44,20 @@ impl Repo {
                 }
             })
             .filter_map(|ancestor| self.ignore_files.get(&ancestor))
-            .any(|ignore_file| ignore_file.is_ignored(&path, is_dir))
+            .find_map(|ignore_file| {
+                let ignore_result = ignore_file.is_ignored_or_negated(&path, is_dir);
+                if ignore_result == IgnoreResult::Undefined {
+                    None
+                } else {
+                    Some(ignore_result)
+                }
+            });
+
+        if let Some(ignore_result) = result {
+            ignore_result == IgnoreResult::Ignored
+        } else {
+            false
+        }
     }
 }
 
@@ -74,8 +88,7 @@ mod test {
         assert!(!repo.is_ignored("include_me", false));
         assert!(!repo.is_ignored("im_included/hello.greeting", false));
         assert!(!repo.is_ignored("a_dir/a_nested_dir/.gitignore", false));
-        // FIXME: This last test won't work until we do cascading properly.
-        // assert!(!repo.is_ignored("a_dir/a_nested_dir/deeper_still/bit_now_i_work.no", false));
+        assert!(!repo.is_ignored("a_dir/a_nested_dir/deeper_still/bit_now_i_work.no", false));
     }
 
     #[test]

@@ -14,6 +14,17 @@ pub struct RuleSet {
     tester: GlobSet
 }
 
+/// Represents the return value of a ruleset.
+/// If the ruleset ignores a given file, it is Ignored
+/// If the ruleset negates any previous ignores, it is Negated
+/// If the ruleset does not apply to the given path, its Undefined.
+#[derive(PartialEq)]
+pub(crate) enum IgnoreResult {
+    Ignored,
+    Negated,
+    Undefined,
+}
+
 impl RuleSet {
     /// Construct a ruleset, given a path that is the root of the repository, and a set of rules,
     /// which is a vector
@@ -52,9 +63,9 @@ impl RuleSet {
         })
     }
 
-    /// Check if the given path should be considered ignored as per the rules contained within
+    /// Check if the given path should be considered ignored or negated as per the rules contained within
     /// the current ruleset.
-    pub fn is_ignored<P: AsRef<Path>>(&self, path: P, is_dir: bool) -> bool {
+    pub(crate) fn is_ignored_or_negated<P: AsRef<Path>>(&self, path: P, is_dir: bool) -> IgnoreResult {
         // FIXME: Is there a better way without needing to hardcode a path here?
         let mut cleaned_path = Self::strip_prefix(path.as_ref(), Path::new("./"));
         cleaned_path = Self::strip_prefix(cleaned_path.as_path(), &self.root);
@@ -70,10 +81,23 @@ impl RuleSet {
                 continue;
             }
 
-            return !rule.negation
+            return if rule.negation {
+                IgnoreResult::Negated
+            } else {
+                IgnoreResult::Ignored
+            }
         }
 
-        false
+        IgnoreResult::Undefined
+    }
+
+    /// Check if the given path should be considered ignored as per the rules contained within
+    /// the current ruleset.
+    pub fn is_ignored<P: AsRef<Path>>(&self, path: P, is_dir: bool) -> bool {
+        match self.is_ignored_or_negated(path, is_dir) {
+            IgnoreResult::Ignored => true,
+            _ => false,
+        }
     }
 
     /// Given a raw pattern, parse it and attempt to construct a rule out of it. The pattern pattern

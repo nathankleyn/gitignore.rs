@@ -25,6 +25,10 @@ impl IgnoreFile {
     pub fn is_ignored<P: AsRef<Path>>(&self, path: P, is_dir: bool) -> bool {
         self.ruleset.is_ignored(path, is_dir)
     }
+
+    pub(crate) fn is_ignored_or_negated<P: AsRef<Path>>(&self, path: P, is_dir: bool) -> IgnoreResult {
+        self.ruleset.is_ignored_or_negated(path, is_dir)
+    }
 }
 
 #[cfg(test)]
