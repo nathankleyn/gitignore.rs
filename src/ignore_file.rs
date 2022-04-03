@@ -70,6 +70,6 @@ mod test {
     fn returns_correctly_an_ignorefile_from_valid_file() {
         let file = ignore_file_from_test_repo!(".gitignore").unwrap();
 
-        assert_eq!(file.ruleset.rules, ruleset_from_rules("*.no\nnot_me_either/\n/or_even_me").rules)
+        assert_eq!(file.ruleset.rules, ruleset_from_rules("*.no\nnot_me_either/\n/or_even_me\n!*.neg").rules)
     }
 }
