@@ -27,33 +27,23 @@ impl Repo {
     }
 
     pub fn is_ignored<P: AsRef<Path>>(&self, path: P, is_dir: bool) -> bool {
-        // When given a path, for each segment in the path, find any `.gitignore`
-        // corresponding to it that segment.
-        // Try the deepest first, recursing up to the root.
-        // If a file is excluded by an ignore file, stop recursing (?)
-        // (FIXME: is is possible to be re-included by a higher-up file?)
-        // @bkuster say: no: you can only be negated by a lower-down file
-        // println!("{:?}", self.ignore_files.keys());
-        
         let mut abs_path = path.as_ref().to_path_buf();
         if abs_path.is_relative() {
             abs_path = self.root.join(&path);
         }
-        let ancestors: Vec<&Path> = abs_path.parent()
+
+        abs_path.parent()
             .unwrap()
             .ancestors()
-            .filter(|&ancestor| ancestor.starts_with(&self.root))
-            .collect();
-
-        println!("{:?} {:?}", path.as_ref(), &ancestors);
-        self.ignore_files
-            .iter()
-            .filter(|&(ignore_file_path, _)| {
-                ancestors.iter().any(|&a| a == ignore_file_path.parent().unwrap())
+            .filter_map(|ancestor| {
+                if ancestor.starts_with(&self.root) {
+                    Some(ancestor.join(".gitignore"))
+                } else {
+                    None
+                }
             })
-            .any(|(ignore_file_path, ignore_file)| {
-                ignore_file.is_ignored(&path, is_dir)
-            })
+            .filter_map(|ancestor| self.ignore_files.get(&ancestor))
+            .any(|ignore_file| ignore_file.is_ignored(&path, is_dir))
     }
 }
 
